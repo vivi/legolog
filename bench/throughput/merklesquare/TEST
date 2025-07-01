@@ -1,0 +1,30 @@
+2020/06/02 20:56:26 WARNING: proto: file "interface.proto" is already registered
+A future release will panic on registration conflicts. See:
+https://developers.google.com/protocol-buffers/docs/reference/go/faq#namespace-conflict
+
+goos: linux
+goarch: amd64
+pkg: github.com/huyuncong/MerkleSquare/bench/throughput/merklesquare
+BenchmarkLookUpPKVerifyThroughput
+BenchmarkLookUpPKVerifyThroughput-36    	    5005	    239220 ns/op
+BenchmarkLookUpMKVerifyThroughput
+BenchmarkLookUpMKVerifyThroughput-36    	    8172	    122682 ns/op
+BenchmarkMonitoringThroughput
+BenchmarkMonitoringThroughput-36        	    8226	    145095 ns/op
+PASS
+ok  	github.com/huyuncong/MerkleSquare/bench/throughput/merklesquare	17.303s
+2020/06/02 20:58:07 WARNING: proto: file "interface.proto" is already registered
+A future release will panic on registration conflicts. See:
+https://developers.google.com/protocol-buffers/docs/reference/go/faq#namespace-conflict
+
+goos: linux
+goarch: amd64
+pkg: github.com/huyuncong/MerkleSquare/bench/throughput/merklesquare
+BenchmarkLookUpPKVerifyThroughput
+BenchmarkLookUpPKVerifyThroughput-36    	    4986	    239713 ns/op
+BenchmarkLookUpMKVerifyThroughput
+BenchmarkLookUpMKVerifyThroughput-36    	    8628	    122656 ns/op
+BenchmarkMonitoringThroughput
+BenchmarkMonitoringThroughput-36        	    8278	    144582 ns/op
+PASS
+ok  	github.com/huyuncong/MerkleSquare/bench/throughput/merklesquare	17.359s
