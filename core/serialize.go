@@ -145,6 +145,7 @@ func DeserializeMerkleSquare(buf []byte) (*MerkleSquare, error) {
 }
 
 func (prefixTree *prefixTree) serialize() ([]byte, error) {
+	return json.Marshal(prefixTree.appends)
 
 	tree, err := prefixTree.root.serialize()
 	if err != nil {
@@ -165,22 +166,19 @@ func (prefixTree *prefixTree) serialize() ([]byte, error) {
 }
 
 func deserializePrefixTree(buf []byte) (*prefixTree, error) {
-
-	var jsonPrefix JSONPrefixTree
-	err := json.Unmarshal(buf, &jsonPrefix)
+	var appends []prefixAppend
+	err := json.Unmarshal(buf, &appends)
 	if err != nil {
 		return nil, err
 	}
-
-	root, err := deserializePrefixInternalNode(jsonPrefix.Root)
-	if err != nil {
-		return nil, err
+	res := NewPrefixTree()
+	for _, append := range appends {
+		err = res.PrefixAppend(append.Prefix, append.Value, append.Pos)
+		if err != nil {
+			return nil, err
+		}
 	}
-
-	return &prefixTree{
-		root:       root,
-		isComplete: jsonPrefix.IsComplete,
-	}, nil
+	return res, nil
 }
 
 //*******************************

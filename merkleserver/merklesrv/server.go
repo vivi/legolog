@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ucbrise/MerkleSquare/constants"
-	"github.com/ucbrise/MerkleSquare/core"
-	"github.com/ucbrise/MerkleSquare/lib/storage"
+	"github.com/huyuncong/MerkleSquare/constants"
+	"github.com/huyuncong/MerkleSquare/core"
+	"github.com/huyuncong/MerkleSquare/lib/storage"
 
 	"github.com/coniks-sys/coniks-go/crypto/vrf"
 	"github.com/immesys/bw2/crypto"

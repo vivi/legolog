@@ -4,13 +4,23 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 
-	crypto "github.com/ucbrise/MerkleSquare/lib/crypto"
+	crypto "github.com/huyuncong/MerkleSquare/lib/crypto"
 )
 
+type prefixAppend struct {
+	Prefix []byte `json:"prefix"`
+	Value  []byte `json:"value"`
+	Pos    uint32 `json:"pos"`
+}
+
+// TODO: Maybe we need to make it public in the future. We can decide later
+// -- Yuncong
 type prefixTree struct {
 	root       *internalNode
 	isComplete bool
+	appends    []prefixAppend
 }
 
 // for node on path to root, store onpath partial prefix, and the hash of the offpath child,
@@ -53,6 +63,9 @@ func NewPrefixTree() *prefixTree {
 func makePrefixFromKey(key []byte) []byte {
 	return ConvertBitsToBytes(crypto.Hash(key))
 }
+func MakePrefixFromKey(key []byte) []byte {
+	return ConvertBitsToBytes(crypto.Hash(key))
+}
 
 func ConvertBitsToBytes(asBits []byte) []byte {
 
@@ -71,12 +84,18 @@ func ConvertBitsToBytes(asBits []byte) []byte {
 	return res
 }
 
+func getBit(prefix []byte, i uint32) byte {
+	return (prefix[i/8] >> (7 - i%8)) & 1
+}
+
 func (tree *prefixTree) PrefixAppend(prefix []byte, valueHash []byte, pos uint32) (err error) { //// TODO: add hashes and parents
 
 	if tree.isComplete {
 		err = errors.New("cannot append to completed prefix tree")
 		return
 	}
+
+	tree.appends = append(tree.appends, prefixAppend{prefix, valueHash, pos})
 
 	var prev prefixNode
 	var curr prefixNode = tree.root
@@ -182,6 +201,10 @@ func (tree *prefixTree) generateNonMembershipProof(prefix []byte) *NonMembership
 			i += uint32(len(partialPrefix))
 			continue
 		} else {
+			// WARNING: Again, this seems to miss something.
+			// At least, you should use "i" or "j" information and recalculate the hash
+			// as if there is a splited node at "i" or "j".
+			// TODO: discuss with Yuncong again, I don't believe faking a split is necessary
 			return &NonMembershipProof{
 				EndNodeHash:          curr.getHash(),
 				EndNodePartialPrefix: curr.getPartialPrefix(),
@@ -294,6 +317,10 @@ func getRootHash(endNodeHash []byte, endNodePartialPrefix []byte, copath []forNo
 	return currHash
 }
 
+// NOTE: For the verification, you should provide key-value information.
+// For verifyMembershipProof, the input should contain all the key-value pairs in the leaf node,
+// including positions and signatures.
+// TODO: will add this after key-value store implemented
 func computeRootHashMembership(prefix []byte, proof *MembershipProof, leafValues []KeyHash) (rootHash []byte) {
 	if !bytes.Equal(prefix, append(getPrefix(proof.CopathNodes), proof.LeafPartialPrefix...)) {
 		return nil //copath in proof leads somewhere other than key's leaf node
@@ -329,9 +356,73 @@ func (tree *prefixTree) getSize() int {
 
 	// isComplete bool
 	total += binary.Size(tree.isComplete)
+	// fmt.Println(binary.Size(tree.isComplete))
 
 	// actual tree size
 	total += tree.root.getSize()
 
+	// sum := tree.root.getNumNodes()
+	// fmt.Println(sum)
+	// fmt.Println(total)
+
 	return total
+}
+
+func (tree *prefixTree) copy() (*prefixTree, error) {
+	ret := NewPrefixTree()
+	for _, append := range tree.appends {
+		err := ret.PrefixAppend(append.Prefix, append.Value, append.Pos)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return ret, nil
+
+	treeJson, err := tree.serialize()
+	if err != nil {
+		return nil, err
+	}
+	ret, err = deserializePrefixTree(treeJson)
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func (p *prefixTree) HasValue(prefix []byte, value []byte) bool {
+	if p.getLeaf(prefix) == nil {
+		return false
+	}
+	prefixNode := p.getLeaf(prefix)
+	for _, entry := range prefixNode.getValues() {
+		if bytes.Equal(value, entry.Hash) {
+			return true
+		}
+	}
+	return false
+}
+func (p *prefixTree) String() string {
+	currLevel := []prefixNode{p.root}
+	ret := ""
+	level := 0
+	for len(currLevel) > 0 {
+		ret += fmt.Sprintf("Level %d: ", level)
+		nextLevel := []prefixNode{}
+		for _, node := range currLevel {
+			if node.getParent() != nil {
+				ret += fmt.Sprintf("%d<-", node.getParent().getPartialPrefix())
+			}
+			ret += fmt.Sprintf("%x\t", node.getHash()[:10])
+			if node.getLeftChild()!= nil {
+				nextLevel = append(nextLevel, node.getLeftChild())
+			}
+			if node.getRightChild() != nil {
+				nextLevel = append(nextLevel, node.getRightChild())
+			}
+		}
+		ret += "\n"
+		currLevel = nextLevel
+		level += 1
+	}
+	return ret
 }

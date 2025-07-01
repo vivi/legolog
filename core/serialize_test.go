@@ -1,7 +1,6 @@
 package core
 
 import (
-	"os"
 	"reflect"
 	"testing"
 )
@@ -242,12 +241,12 @@ func TestFileReadWrite(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, err = WriteBytesToFile(buf, "./mytreeForTest")
+	_, err = WriteBytesToFile(buf, "../mytree")
 	if err != nil {
 		t.Error(err)
 	}
 
-	readBuf, err := ReadBytesFromFile("./mytreeForTest")
+	readBuf, err := ReadBytesFromFile("../mytree")
 	if err != nil {
 		t.Error()
 	}
@@ -259,11 +258,6 @@ func TestFileReadWrite(t *testing.T) {
 
 	if !reflect.DeepEqual(result, ms) {
 		t.Error()
-	}
-
-	err = os.Remove("./mytreeForTest")
-	if err != nil {
-		t.Error(err)
 	}
 
 }

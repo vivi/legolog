@@ -1,0 +1,260 @@
+syntax = "proto3";
+
+option go_package = "github.com/huyuncong/MerkleSquare/legolog/legolog-grpcint";
+package legologgrpcint;
+
+message RegisterRequest {
+    Username usr = 1;
+    MasterKey key = 2;
+    bytes signature = 3;
+}
+
+message RegisterResponse {
+    // bytes vrf_key = 1;
+    Position pos = 1;
+}
+
+message Username {
+    bytes username = 1;
+}
+
+message Identifier {
+    bytes identifier = 1;
+}
+
+message MasterKey {
+    bytes mk = 1;
+}
+
+message Value {
+    bytes value = 1;
+}
+
+message Position {
+    uint64 pos = 1;
+}
+
+message IndexedMK {
+    MasterKey master_key = 1;
+    Position pos = 2;
+}
+
+message IndexedValue {
+    Value value = 1;
+    Position pos = 2;
+}
+
+
+// append consists of an identifier-value pair
+message AppendRequest {
+    Username usr = 1;
+    Identifier identifier = 2;
+    Value value = 3; // the key corresponding to identifier
+    bytes signature = 4;
+}
+
+message AppendResponse {
+    Position pos = 1;
+//  bytes vrf_key = 2;
+    bool completed = 2;
+}
+
+message LookUpMKRequest {
+    Username usr = 1;
+}
+
+message LookUpMKResponse {
+    IndexedMK imk = 1;
+    bytes signature = 2;
+    // bytes vrf_key = 3;
+}
+
+
+message LookUpPKRequest {
+    // Username usr = 1;
+    Identifier identifier = 1;
+    // Position pos = 2; // null-able
+}
+
+message LookUpPKResponse {
+    IndexedValue indexed_value = 1;
+    bytes signature = 2;
+    // bytes vrf_key = 3;
+}
+
+message LookUpPKVerifyRequest {
+    Identifier identifier = 1;
+    uint64 size = 2;
+}
+
+message LookUpPKVerifyResponse {
+    IndexedValue indexed_value = 1;
+    bytes signature = 2;
+    // bytes vrf_key = 3;
+    bytes proof = 3;
+}
+
+
+message LookUpMKVerifyRequest {
+    Username usr = 1;
+    // uint64 size = 2;
+}
+
+message LookUpMKVerifyResponse {
+    IndexedValue indexed_value = 1;
+    bytes signature = 2;
+    // bytes vrf_key = 3;
+    bytes proof = 3;
+}
+
+message GetPublicKeyProofRequest {
+    Username usr = 1;
+    Identifier identifier = 2;
+    Value value = 3;
+    // Position pos = 3;
+    uint32 height = 4;
+    uint64 size = 5;
+}
+
+message GetPublicKeyProofResponse {
+    bytes proof = 1;
+}
+
+message GetMasterKeyProofRequest {
+    Username usr = 1;
+    Identifier identifier = 2;
+    MasterKey key = 3;
+    Position pos = 4;
+    uint64 size = 5;
+}
+
+message GetMasterKeyProofResponse {
+    bytes proof = 1;
+}
+
+message GetLookUpProofRequest {
+    bool is_master_key = 1;
+    Username usr = 2;
+    Identifier identifier = 3;
+    MasterKey master_key = 4;
+    Value value = 5;
+    Position pos = 6;
+    uint64 size = 7;
+}
+
+message GetLookUpProofResponse {
+    bytes proof = 1;
+}
+
+message CheckPoint {
+    bytes marshaled_digest = 1;
+    uint64 num_leaves = 2;
+    uint64 epoch = 3;
+}
+
+message GetNewCheckPointRequest {
+    uint64 old_size = 1;
+    uint64 partition_index = 2;
+}
+
+message GetNewCheckPointResponse {
+    CheckPoint checkpoint = 1;
+    bytes proof = 2;
+}
+
+// TODO: add proofs functions for MK and getlookupproof
+
+service LegoLog {
+    // Client API
+    rpc Register(RegisterRequest) returns (RegisterResponse) {}
+
+    rpc Append(stream AppendRequest) returns (stream AppendResponse) {}
+
+    rpc LookUpMK(LookUpMKRequest) returns (LookUpMKResponse) {}
+
+    rpc LookUpPK(LookUpPKRequest) returns (LookUpPKResponse) {}
+
+    rpc LookUpMKVerify(LookUpMKVerifyRequest) returns (LookUpMKVerifyResponse) {}
+
+    rpc LookUpPKVerify(LookUpPKVerifyRequest) returns (LookUpPKVerifyResponse) {}
+
+
+    // Auditor Interface
+    rpc GetNewCheckPoint(GetNewCheckPointRequest) returns (GetNewCheckPointResponse) {}
+
+    rpc GetNewUpdateCheckPoint(GetNewCheckPointRequest) returns (GetNewCheckPointResponse) {}
+    rpc GetNewVerifyCheckPoint(GetNewCheckPointRequest) returns (GetNewCheckPointResponse) {}
+
+    // verifier/monitoring stuff... TODO
+    
+    // Verifier-Server API
+    rpc GetMasterKeyProof(GetMasterKeyProofRequest) returns (GetMasterKeyProofResponse) {}
+    rpc GetPublicKeyProof(GetPublicKeyProofRequest) returns (GetPublicKeyProofResponse) {}
+    // rpc GetLookUpProof(GetLookUpProofRequest) returns (GetLookUpProofResponse) {}
+}
+
+
+
+message VerifyRegisterRequest {
+    Username usr = 1;
+    Identifier identifer = 2;
+    // bytes vrf_key = 2;
+    MasterKey key = 3;
+    bytes signature = 4;
+    Position pos = 5;
+}
+
+message VerifyRegisterResponse {
+}
+
+message VerifyAppendRequest {
+    Username usr = 1;
+    Identifier identifier = 2;
+    // bytes vrf_key = 2;
+    Value value = 3;
+    bytes signature = 4;
+    Position pos = 5;
+}
+
+message VerifyAppendResponse {
+}
+
+message VerifyLookUpRequest {
+    bool is_master_key = 1;
+    Username usr = 2;
+    Identifier identifier = 3;
+    // bytes vrf = 3;
+    MasterKey master_key = 4;
+    Value value = 5;
+    bytes signature = 6;
+    Position pos = 7;
+}
+
+message VerifyLookUpResponse {
+}
+
+service Verifier {
+    rpc VerifyRegisterAsync(VerifyRegisterRequest) returns (VerifyRegisterResponse) {}
+    rpc VerifyAppendAsync(VerifyAppendRequest) returns (VerifyAppendResponse) {}
+    rpc VerifyLookUpAsync(VerifyLookUpRequest) returns (VerifyLookUpResponse) {}
+}
+
+message GetEpochUpdateRequest {}
+
+message GetEpochUpdateResponse {
+    repeated CheckPoint ck_points = 1;
+}
+
+message GetEpochUpdateForPartitionRequest {
+    uint64 partition = 1;
+}
+
+message GetEpochUpdateForPartitionResponse {
+    CheckPoint ck_point = 1;
+}
+
+service Auditor {
+    // Auditor-Client-Server API
+    rpc GetEpochUpdate(GetEpochUpdateRequest) returns (GetEpochUpdateResponse) {}
+    rpc GetEpochUpdateForPartition(GetEpochUpdateForPartitionRequest) returns (GetEpochUpdateForPartitionResponse) {}
+}

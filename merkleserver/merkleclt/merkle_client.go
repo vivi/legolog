@@ -6,7 +6,7 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/ucbrise/MerkleSquare/grpcint"
+	"github.com/huyuncong/MerkleSquare/grpcint"
 	"github.com/immesys/bw2/crypto"
 	"google.golang.org/grpc"
 )

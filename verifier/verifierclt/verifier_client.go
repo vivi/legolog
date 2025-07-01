@@ -5,7 +5,7 @@ package verifierclt
 import (
 	"context"
 
-	"github.com/ucbrise/MerkleSquare/grpcint"
+	"github.com/huyuncong/MerkleSquare/grpcint"
 	"google.golang.org/grpc"
 )
 

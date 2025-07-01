@@ -3,7 +3,7 @@ package core
 import (
 	"encoding/binary"
 
-	crypto "github.com/ucbrise/MerkleSquare/lib/crypto"
+	crypto "github.com/huyuncong/MerkleSquare/lib/crypto"
 )
 
 // Internal node in Prefix Tree
@@ -114,6 +114,7 @@ func (node *internalNode) getChild(prefix []byte, nextPrefixByteIndex uint32) pr
 
 }
 
+// TODO: consider security for hashes computed this way
 func (node *internalNode) updateHash() {
 	var leftHash, rightHash []byte
 	if node.leftChild != nil {
@@ -190,12 +191,16 @@ func (node *leafNode) getSize() int {
 	total := pointerSizeInBytes
 
 	// size of partialPrefix and hash
+	// total += binary.Size(node.getPartialPrefix())/8 + binary.Size(node.getHash())
 	total += binary.Size(node.getPartialPrefix()) + binary.Size(node.getHash())
+	// fmt.Println(binary.Size(node.getPartialPrefix()) / 8)
 
 	// size of KeyHash values
 	for _, value := range node.getValues() {
 		total += binary.Size(value.Hash) + binary.Size(value.Pos)
 	}
+
+	// fmt.Println(total)
 
 	return total
 }

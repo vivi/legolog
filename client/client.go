@@ -7,11 +7,11 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/ucbrise/MerkleSquare/auditor/auditorclt"
-	"github.com/ucbrise/MerkleSquare/core"
-	"github.com/ucbrise/MerkleSquare/grpcint"
-	"github.com/ucbrise/MerkleSquare/merkleserver/merkleclt"
-	"github.com/ucbrise/MerkleSquare/verifier/verifierclt"
+	"github.com/huyuncong/MerkleSquare/auditor/auditorclt"
+	"github.com/huyuncong/MerkleSquare/core"
+	"github.com/huyuncong/MerkleSquare/grpcint"
+	"github.com/huyuncong/MerkleSquare/merkleserver/merkleclt"
+	"github.com/huyuncong/MerkleSquare/verifier/verifierclt"
 
 	"github.com/immesys/bw2/crypto"
 )
@@ -59,6 +59,20 @@ func NewClient(serverAddr string, auditorAddr string, verifierAddr string) (
 	return &c, nil
 }
 
+func NewClientForUserThroughput(serverAddr string, maxMsgSize int) (
+	*Client, error) {
+
+	c := Client{
+		masterKeys: make(map[string]MasterKeyRecord),
+	}
+	var err error
+	c.merkleClient, err = merkleclt.NewMerkleClientWithMaxMsgSize(serverAddr, maxMsgSize)
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
+}
+
 //Register user and the corresponding public master key to the server.
 func (c *Client) Register(ctx context.Context, username []byte,
 	masterSK []byte, masterVK []byte) (uint64, error) {
@@ -66,12 +80,23 @@ func (c *Client) Register(ctx context.Context, username []byte,
 	return response.GetPos().GetPos(), err
 }
 
-// RegisterForSize returns the size of the server's response.
-// This function is used for test.
 func (c *Client) RegisterForSize(ctx context.Context, username []byte,
 	masterSK []byte, masterVK []byte) (int, error) {
 	response, err := c.registerInt(ctx, username, masterSK, masterVK)
 	return proto.Size(response), err
+}
+
+func (c *Client) RegisterForThroughput(ctx context.Context, username []byte,
+	masterSK []byte, masterVK []byte) (uint64, error) {
+	signature := make([]byte, 64)
+	crypto.SignBlob(masterSK, masterVK, signature, masterVK)
+	request := grpcint.RegisterRequest{
+		Usr:       &grpcint.Username{Username: username},
+		Key:       &grpcint.MasterKey{Mk: masterVK},
+		Signature: signature,
+	}
+	response, err := c.merkleClient.Register(ctx, &request)
+	return response.GetPos().GetPos(), err
 }
 
 // registerInt is the internal implementation to register a user
@@ -201,6 +226,19 @@ func (c *Client) LookUpMKVerifyForSize(ctx context.Context, username []byte) (in
 		return 0, err
 	}
 	return proto.Size(response), nil
+}
+
+// LookUpMKVerifyForThroughput takes a name and looks up the associated key/proof.
+// This function skips the actual verification as to only measure the time
+// taken for the server to generate the proof, not including the time it takes
+// to verify the proof.
+func (c *Client) LookUpMKVerifyForThroughput(ctx context.Context, username []byte) ([]byte, uint64, error) {
+	var serverRequest = &grpcint.LookUpMKVerifyRequest{
+		Size: 0,
+		Usr:  &grpcint.Username{Username: username},
+	}
+	response, err := c.merkleClient.LookUpMKVerify(ctx, serverRequest)
+	return response.GetImk().GetMasterKey().GetMk(), response.GetImk().GetPos().GetPos(), err
 }
 
 // lookUpMKVerifyInt is the internal function to look up the master key
@@ -361,12 +399,32 @@ func (c *Client) lookUpPKVerifyInt(ctx context.Context, username []byte) (
 	return serverResponse, nil
 }
 
-// MonitoringForSize takes a name, the position number in chronological forest,
-// the height in the tree (recall that the owner can skip prefix trees that were
-// checked in the past), the vrf (disabled right now), the encryption key (value),
-// signature, and hash of the leaf node to obtain the size of the monitoring proof.
-// This function is used for test purpose, and the verification daemon should perform
-// the monitoring on behalf of the owner periodically.
+// LookUpPKVerifyForThroughput takes a name and looks up the associated key/proof.
+// This function skips the actual verification as to only measure the time
+// taken for the server to generate the proof, not including the time it takes
+// to verify the proof.
+func (c *Client) LookUpPKVerifyForThroughput(ctx context.Context,
+	username []byte) ([]byte, uint64, error) {
+	serverRequest := &grpcint.LookUpPKVerifyRequest{
+		Size: 0,
+		Usr:  &grpcint.Username{Username: username},
+	}
+	_, err := c.merkleClient.LookUpPKVerify(ctx, serverRequest)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, 0, err
+	}
+	return nil, 0, nil
+}
+
+func (c *Client) MonitoringForLatency(ctx context.Context, username []byte,
+	pos int, height int, vrf []byte, Ek []byte, signature []byte,
+	keyhash []core.KeyHash) error {
+	_, err := c.monitoringInt(ctx, username, pos, height, vrf,
+		Ek, signature, keyhash)
+	return err
+}
+
 func (c *Client) MonitoringForSize(ctx context.Context, username []byte,
 	pos int, height int, vrf []byte, Ek []byte, signature []byte,
 	keyhash []core.KeyHash) (int, error) {
@@ -378,7 +436,26 @@ func (c *Client) MonitoringForSize(ctx context.Context, username []byte,
 	return proto.Size(response), nil
 }
 
-// monitoringInt is the internal function to obtain the moniroing proof for client.
+func (c *Client) MonitoringForThroughput(ctx context.Context, username []byte,
+	pos int, height int) error {
+	proofrequest := &grpcint.GetMonitoringProofForTestRequest{
+		Usr: &grpcint.Username{
+			Username: username,
+		},
+		Size: 0,
+		Pos: &grpcint.Position{
+			Pos: uint64(pos),
+		},
+		Height: uint32(height),
+	}
+	_, err := c.merkleClient.GetMonitoringProofForTest(ctx, proofrequest)
+	if err != nil {
+		fmt.Println("could not get proof, trying again in next verify iteration")
+		return err
+	}
+	return nil
+}
+
 func (c *Client) monitoringInt(ctx context.Context, username []byte,
 	pos int, height int, vrf []byte, Ek []byte, signature []byte,
 	keyhash []core.KeyHash) (*grpcint.GetPublicKeyProofResponse, error) {
@@ -426,8 +503,6 @@ func (c *Client) monitoringInt(ctx context.Context, username []byte,
 	return proofResponse, nil
 }
 
-// RequestAuditorForSize obtain the size of the auditor's response.
-// This function is used for test.
 func (c *Client) RequestAuditorForSize(ctx context.Context) (int, error) {
 	auditorResponse, err := c.auditorClient.GetEpochUpdate(ctx)
 	if err != nil {

@@ -1,0 +1,6 @@
+verification_period_ms: 9
+update_period_ms: 3
+partitions: 4
+verifier: "verifier name"
+agg_history: false
+agg_history_depth: 0

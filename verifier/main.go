@@ -5,9 +5,9 @@ import (
 	"net"
 	"runtime"
 
-	"github.com/ucbrise/MerkleSquare/constants"
-	"github.com/ucbrise/MerkleSquare/grpcint"
-	"github.com/ucbrise/MerkleSquare/verifier/verifierd"
+	"github.com/huyuncong/MerkleSquare/constants"
+	"github.com/huyuncong/MerkleSquare/grpcint"
+	"github.com/huyuncong/MerkleSquare/verifier/verifierd"
 
 	"google.golang.org/grpc"
 )

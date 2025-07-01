@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/ucbrise/MerkleSquare/grpcint"
+	"github.com/huyuncong/MerkleSquare/grpcint"
 
 	"github.com/immesys/bw2/crypto"
 )
@@ -251,6 +251,7 @@ func (s *Server) GetNewCheckPoint(ctx context.Context,
 	}, nil
 }
 
+// called by owner
 func (s *Server) GetMasterKeyProof(ctx context.Context,
 	req *grpcint.GetMasterKeyProofRequest) (
 	*grpcint.GetMasterKeyProofResponse, error) {
@@ -270,6 +271,7 @@ func (s *Server) GetMasterKeyProof(ctx context.Context,
 	}, nil
 }
 
+// called by owner
 func (s *Server) GetPublicKeyProof(ctx context.Context,
 	req *grpcint.GetPublicKeyProofRequest) (*grpcint.GetPublicKeyProofResponse, error) {
 	if err := ctx.Err(); err != nil {
@@ -322,6 +324,7 @@ func (s *Server) GetMonitoringProofForTest(ctx context.Context,
 	}, nil
 }
 
+// external user (who doesn't own the identifer-value mapping) calls this
 func (s *Server) GetLookUpProof(ctx context.Context,
 	req *grpcint.GetLookUpProofRequest) (
 	*grpcint.GetLookUpProofResponse, error) {

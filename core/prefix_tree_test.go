@@ -3,12 +3,29 @@ package core
 import (
 	"bytes"
 	"crypto/rand"
+	"reflect"
 	"testing"
 
-	crypto "github.com/ucbrise/MerkleSquare/lib/crypto"
+	crypto "github.com/huyuncong/MerkleSquare/lib/crypto"
 )
 
-const PREFIXVRFSIZE, VALUEHASHSIZE uint32 = 32, 32
+const PREFIXVRFSIZE, VALUEHASHSIZE uint32 = 32, 32 // TODO: constants should be elsewhere
+
+func TestGetBit(t *testing.T) {
+	testArr := []byte{0b10101010, 0b10101010}
+	for i := 0; i < 16; i++ {
+		bit := getBit(testArr, uint32(i))
+		if i%2 == 0 {
+			if bit != 1 {
+				t.Error()
+			}
+		} else {
+			if bit != 0 {
+				t.Error()
+			}
+		}
+	}
+}
 
 func TestPrefixAppendOnce(t *testing.T) {
 	tree := NewPrefixTree()
@@ -287,4 +304,33 @@ func prepareTestingTree(numKeys uint32, numValsPerKey uint32) (t *prefixTree, pr
 		}
 	}
 	return t, prefixes, valsPerPrefix
+}
+
+func TestPrefixTreeCopy(t *testing.T) {
+
+	prefix := NewPrefixTree()
+
+	prefix.PrefixAppend(ConvertBitsToBytes([]byte("vivian")), []byte("hash1"), 0)
+	prefix.PrefixAppend(ConvertBitsToBytes([]byte("akshay")), []byte("hash2"), 1)
+	prefix.PrefixAppend(ConvertBitsToBytes([]byte("akshit")), []byte("hash3"), 2)
+
+	result, err := prefix.copyFast()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !reflect.DeepEqual(result, prefix) {
+		t.Error()
+	}
+}
+
+func TestPrefixTreeNonMembership(t *testing.T) {
+	tree := NewPrefixTree()
+	tree.PrefixAppend([]byte{0b0}, nil, 0)
+	proof := tree.generateNonMembershipProof([]byte{0b1})
+	computedRootHash := computeRootHashNonMembership([]byte{0b1}, proof)
+	ok := bytes.Equal(computedRootHash, tree.getHash())
+	if !ok {
+		t.Error("Non-membership proof failed")
+	}
 }

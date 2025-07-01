@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"math/bits"
 
-	crypto "github.com/ucbrise/MerkleSquare/lib/crypto"
+	crypto "github.com/huyuncong/MerkleSquare/lib/crypto"
 )
 
 // MerkleSquare instance
@@ -117,11 +117,13 @@ func (m *MerkleSquare) Append(key []byte, value []byte, signature []byte) {
 	if m.isFull() {
 		return
 	}
-	_ = p.getParent().createRightChild()
+	newNode := p.getParent().createRightChild()
+	m.addNodeToMap(newNode)
 	p = p.getParent().getRightChild()
 
 	for p.getDepth() > 0 {
-		_ = p.createLeftChild()
+		newNode = p.createLeftChild()
+		m.addNodeToMap(newNode)
 		p = p.getLeftChild()
 	}
 
@@ -248,6 +250,8 @@ func (m *MerkleSquare) ProveFirst(key []byte, MK []byte, pos uint32, oldSize uin
 }
 
 // ProveLatest generates a LatestPKProof for a given PK
+// one kind of lookup is look up all the values in history, and another is
+// since this proof consists of two layers of merkle squared
 func (m *MerkleSquare) ProveLatest(key []byte, PK []byte, pos uint32, oldSize uint32) *LatestPKProof {
 
 	index := getRootIndex(pos, oldSize)
@@ -290,8 +294,8 @@ func (m *MerkleSquare) ProveLatest(key []byte, PK []byte, pos uint32, oldSize ui
 	return &LatestPKProof{
 		NonMembershipProofs: nonMembershipProofs,
 		MembershipProof:     membershipProof,
-		ChildHashes:         childHashes,
-		LeafHash:            leafHash,
+		ChildHashes:         childHashes, // likely for the outer tree
+		LeafHash:            leafHash,    // same as above
 		OtherHashes:         hashes,
 	}
 }
@@ -908,6 +912,16 @@ func combineKeyHashes(keyHashes0 []KeyHash, keyHashes1 []KeyHash) []KeyHash {
 	return res
 }
 
+// Adds a MerkleNode to the MerkleSquare hashmap
+func (m *MerkleSquare) addNodeToMap(node MerkleNode) {
+
+	// sync map version
+	//m.nodeMap.Store(node.getIndex(), node)
+
+	// old version
+	//nodeMap[node.getIndex()] = node
+}
+
 // Gets a MerkleNode from an index
 func (m *MerkleSquare) getNodeFromIndex(index index) MerkleNode {
 
@@ -1026,9 +1040,11 @@ func NewMerkleSquare(depth uint32) *MerkleSquare {
 
 	next := createRootNode(depth)
 	m.root = next
+	m.addNodeToMap(next)
 
 	for next.getDepth() > 0 {
-		_ = next.createLeftChild()
+		newChild := next.createLeftChild()
+		m.addNodeToMap(newChild)
 		next = next.getLeftChild()
 	}
 

@@ -4,8 +4,8 @@ package verifierd
 import (
 	"context"
 
-	"github.com/ucbrise/MerkleSquare/core"
-	"github.com/ucbrise/MerkleSquare/grpcint"
+	"github.com/huyuncong/MerkleSquare/core"
+	"github.com/huyuncong/MerkleSquare/grpcint"
 )
 
 func (v *Verifier) VerifyRegisterAsync(ctx context.Context,

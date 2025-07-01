@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	crypto "github.com/ucbrise/MerkleSquare/lib/crypto"
+	crypto "github.com/huyuncong/MerkleSquare/lib/crypto"
 )
 
 const pointerSizeInBytes = 8
@@ -226,6 +226,10 @@ func (node *InternalNode) getSize() int {
 
 	// prefix tree size
 	total += node.getPrefixTree().getSize()
+
+	// fmt.Println(node.getPrefixTree().getSize())
+	// fmt.Println(pointerSizeInBytes)
+	// fmt.Println(binary.Size(node.hash))
 
 	return total
 }

@@ -8,10 +8,10 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/ucbrise/MerkleSquare/constants"
-	"github.com/ucbrise/MerkleSquare/grpcint"
-	"github.com/ucbrise/MerkleSquare/lib/storage"
-	"github.com/ucbrise/MerkleSquare/merkleserver/merklesrv"
+	"github.com/huyuncong/MerkleSquare/constants"
+	"github.com/huyuncong/MerkleSquare/grpcint"
+	"github.com/huyuncong/MerkleSquare/merkleserver/merklesrv"
+	"github.com/huyuncong/MerkleSquare/lib/storage"
 	"google.golang.org/grpc"
 )
 

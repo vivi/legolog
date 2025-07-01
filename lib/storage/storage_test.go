@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"os"
 	"reflect"
 	"testing"
 )
@@ -33,9 +32,4 @@ func TestLeveldbkvGetPut(t *testing.T) {
 	db := OpenFile("teststore")
 	defer db.Close(ctx)
 	storageGetPutTest(ctx, t, db)
-
-	err := os.RemoveAll("./teststore/")
-	if err != nil {
-		t.Error(err)
-	}
 }
