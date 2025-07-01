@@ -1,0 +1,10 @@
+log_size: 1.0e+6
+max_read_latency: 30
+max_read_throughput: 2.4e+3
+max_write_latency: 15
+max_write_throughput: 12
+reader_device: "mobile"
+writer_device: "mobile"
+writer_refresh_rate: 1800
+writer_max_offline_time: 86400
+auditor_device: "server"

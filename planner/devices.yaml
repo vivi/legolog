@@ -1,0 +1,4 @@
+devices:
+  - name: "laptop"
+    hashes_sec: 1.4e6
+    bandwidth: 25e6

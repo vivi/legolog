@@ -1,0 +1,10 @@
+log_size: 30.0e+6
+max_read_latency: 1
+max_read_throughput: 500
+max_write_latency: 30
+max_write_throughput: 100
+reader_device: "laptop"
+writer_device: "laptop"
+writer_refresh_rate: 86400
+writer_max_offline_time: 86400
+auditor_device: "server"
